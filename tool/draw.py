@@ -40,50 +40,34 @@ def analyze_date_distribution(json_data):
 
 def plot_date_distribution(dates_update_1, counts_update_1, update_0_count, total_count):
     """
-    绘制日期分布统计图
+    绘制日期分布统计图（包含is_update统计维度）
     """
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12))
+    fig, ax = plt.subplots(1, 1, figsize=(15, 8))
 
-    # 柱状图 - 只显示is_update=1的数据
-    bars = ax1.bar(dates_update_1, counts_update_1, color='skyblue', edgecolor='black', alpha=0.7)
-    ax1.set_title(f'抖音用户数据按日期分布统计 (is_update=1, 总计: {sum(counts_update_1)}个)', fontsize=16, fontweight='bold')
-    ax1.set_xlabel('日期', fontsize=12)
-    ax1.set_ylabel('数量', fontsize=12)
-    ax1.tick_params(axis='x', rotation=45)
+    # 柱状图 - 显示is_update=1的数据
+    bars = ax.bar(dates_update_1, counts_update_1, color='skyblue', edgecolor='black', alpha=0.7, label='is_update=1')
+    ax.set_title(f'抖音用户数据按日期分布统计 (总计: {total_count}个)', fontsize=16, fontweight='bold')
+    ax.set_xlabel('日期', fontsize=12)
+    ax.set_ylabel('数量', fontsize=12)
+    ax.tick_params(axis='x', rotation=45)
 
     # 在柱子上显示数量
     for bar, count in zip(bars, counts_update_1):
         height = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+        ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
                  f'{count}', ha='center', va='bottom', fontsize=10)
 
-    # 饼图 - 显示is_update=1的主要日期和is_update=0的部分
-    threshold = 5  # 只显示数量大于5的日期
-    large_counts = [(date, count) for date, count in zip(dates_update_1, counts_update_1) if count > threshold]
-    other_update_1_count = sum(count for count in counts_update_1 if count <= threshold)
-
-    pie_labels = [f"{date}\n({count}个)" for date, count in large_counts]
-    pie_sizes = [count for _, count in large_counts]
-
-    # 添加is_update=0的部分
+    # 添加is_update=0的统计信息到图例
     if update_0_count > 0:
-        pie_labels.append(f"is_update=0\n({update_0_count}个)")
-        pie_sizes.append(update_0_count)
+        ax.bar([0], [0], color='orange', alpha=0.7, label=f'is_update=0 ({update_0_count}个)')
+    
+    # 添加图例
+    ax.legend(loc='upper right')
 
-    # 添加is_update=1的其他日期部分
-    if other_update_1_count > 0:
-        pie_labels.append(f"其他日期\n({other_update_1_count}个)")
-        pie_sizes.append(other_update_1_count)
-
-    colors = plt.cm.Set3(range(len(pie_labels)))
-    wedges, texts, autotexts = ax2.pie(pie_sizes, labels=pie_labels, autopct='%1.1f%%',
-                                       colors=colors, startangle=90)
-    ax2.set_title(f'数据分布比例图 (总计: {total_count}个)', fontsize=16, fontweight='bold')
-
-    # 美化饼图文字
-    for autotext in autotexts:
-        autotext.set_color('white')
-        autotext.set_fontweight('bold')
+    # 添加统计信息文本框
+    stats_text = f"总计: {total_count}个\nis_update=1: {sum(counts_update_1)}个\nis_update=0: {update_0_count}个"
+    ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=12,
+            verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
 
     plt.tight_layout()
     plt.show()
