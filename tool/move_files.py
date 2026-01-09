@@ -45,8 +45,8 @@ def copy_all_files_recursive(source_dir, target_dir):
 
 if __name__ == "__main__":
 
-    source_directory = r"D:\Settings\girls"
-    target_directory = r"D:\Settings\sao_v"
+    source_directory = r"C:\Users\31749\Downloads\p"
+    target_directory = r"C:\Users\31749\Downloads\p"
 
     # 验证源目录是否存在
     if not os.path.isdir(source_directory):
