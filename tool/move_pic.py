@@ -1,19 +1,23 @@
 import os
 import shutil
+import sys
 from pathlib import Path
 
+import yaml
 
-def move_image_files_with_suffix(source_dir, target_dir):
-    """
-    将源目录及其所有子目录中的 jpg 和 png 文件移动到目标目录。
-    如果目标目录中存在同名文件，则自动添加序号。
 
-    Args:
-        source_dir (str): 源目录（Windows路径）
-        target_dir (str): 目标目录
-    """
-    # 定义要移动的图片扩展名（不区分大小写）
-    image_extensions = ('.jpg', '.png')
+def move_image_files_with_suffix(source_dir, target_dir, config_path):
+    image_extensions = None
+
+    try:
+
+        with open(config_path, 'r', encoding='utf-8') as file:
+            config = yaml.safe_load(file)  # 使用 safe_load 避免安全风险[7,8](@ref)
+
+        image_extensions = tuple(config['image_extensions'])
+
+    except Exception as e:
+        print(e)
 
     # 确保目标目录存在
     os.makedirs(target_dir, exist_ok=True)
@@ -57,11 +61,12 @@ def move_image_files_with_suffix(source_dir, target_dir):
 
 # 使用示例
 if __name__ == "__main__":
-    # 设置您的源目录路径（需要搜索的目录）
-    source_directory = r"D:\Settings\TikTok\video"
+    script_dir = Path(sys.executable).parent.resolve()
+    source_directory = script_dir.parent
 
-    # 设置目标目录路径（文件将被移动到此）
-    target_directory = r"D:\Settings\TikTok\pic"
+    target_directory = source_directory.parent / "pic"
+
+    config_path = source_directory / "config.yaml"
 
     # 调用函数执行移动操作
-    move_image_files_with_suffix(source_directory, target_directory)
+    move_image_files_with_suffix(source_directory, target_directory, config_path)

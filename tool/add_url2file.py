@@ -1,7 +1,12 @@
 import json
+import sys
+from pathlib import Path
 
-new_url_file = r"D:\Settings\TikTok\video\new_url.json"
-right_url_file = r"D:\Settings\TikTok\video\right_urls.json"
+script_dir = Path(sys.executable).parent.resolve()
+parent_dir = script_dir.parent
+
+new_url_file = parent_dir / "new_url.json"
+right_url_file = parent_dir / "right_urls.json"
 
 
 def url_in_list(url, list):

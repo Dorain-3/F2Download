@@ -28,7 +28,7 @@ def main(update_path_to_download: Path):
             json_data = json_list[index]
             index += 1
             logging.info(f"开始下载第{index}个json,剩余{UPDATE_MAX_INDEX - count}个")
-            count_ = download_by_json(json_data)
+            count_ = download_by_json(json_data, Download_path)
 
             if count_ > 0:
                 json_data["old_date"] = datetime.now().strftime('%Y-%m-%d')
@@ -52,7 +52,7 @@ def main(update_path_to_download: Path):
         print(e)
 
 
-def download_by_json(json_data: dict):
+def download_by_json(json_data: dict, Download_path):
     # json_data = json.loads(json_data)
     try:
         urls = json_data['url']
@@ -61,7 +61,7 @@ def download_by_json(json_data: dict):
 
         logging.info(f"#{folder_path} has {urls.__len__()} urls!")
         for index, url in enumerate(urls, 1):
-            download_single_url(url, old_date)
+            download_single_url(url, old_date, Download_path)
 
         file_count = 0
 
@@ -86,11 +86,11 @@ def download_by_json(json_data: dict):
         print(e)
 
 
-def download_single_url(url: str, old_date: str):
+def download_single_url(url: str, old_date: str, Download_path: str):
     try:
         logging.info(f"开始下载URL: {url}")
 
-        ps_command = f"f2 dy -p D:/Settings/TikTok/video/Download -i {old_date}'|'2027-01-01 -u {url}"
+        ps_command = f"f2 -d DEBUG dy -p {Download_path} -i {old_date}'|'2028-01-01 -u {url}"
         logging.info(ps_command)
 
         process = subprocess.run(
@@ -112,7 +112,11 @@ def download_single_url(url: str, old_date: str):
 
 if __name__ == "__main__":
 
-    config_path = r"D:\Settings\TikTok\video\config.yaml"
+    script_dir = Path(sys.executable).parent.resolve()
+    parent_dir = script_dir.parent
+
+    config_path = parent_dir / "config.yaml"
+    Download_path = parent_dir / "Download"
 
     try:
 
@@ -166,11 +170,12 @@ if __name__ == "__main__":
         print(f"备份位置: {target_file_path}")
 
 
+
+
     except yaml.YAMLError as e:
         raise ValueError(f"解析配置文件时出错: {e}")
     except Exception as e:
         print(f"备份过程中发生错误: {e}")
-        sys.exit()
     except FileNotFoundError:
         raise FileNotFoundError(f"配置文件未找到")
 

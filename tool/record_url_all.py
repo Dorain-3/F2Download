@@ -1,13 +1,17 @@
+import sys
 from datetime import datetime
 import json
 import os
-from add_url2file import *
+from pathlib import Path
+
+script_dir = Path(sys.executable).parent.resolve()
+parent_dir = script_dir.parent
 
 
 def record_urls():
-    root_path = r"D:\Settings\TikTok\video\post"
-    json_path = r"D:\Settings\TikTok\video\right_urls.json"
-    error_json_path = r"D:\Settings\TikTok\video\error_urls.json"
+    root_path = parent_dir / "post"
+    json_path = parent_dir / "right_urls.json"
+    error_json_path = parent_dir / "error_urls.json"
 
     json_list2w = []
     error_json_list = []

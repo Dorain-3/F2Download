@@ -1,11 +1,14 @@
 import json
+import sys
+
 import matplotlib.pyplot as plt
 from datetime import datetime
-import matplotlib.font_manager as fm
+from pathlib import Path
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
 plt.rcParams['axes.unicode_minus'] = False
+
 
 def analyze_date_distribution(json_data):
     """
@@ -38,6 +41,7 @@ def analyze_date_distribution(json_data):
 
     return dates_update_1, counts_update_1, date_count_update_1, update_0_count
 
+
 def plot_date_distribution(dates_update_1, counts_update_1, update_0_count, total_count):
     """
     绘制日期分布统计图（包含is_update统计维度）
@@ -54,13 +58,13 @@ def plot_date_distribution(dates_update_1, counts_update_1, update_0_count, tota
     # 在柱子上显示数量
     for bar, count in zip(bars, counts_update_1):
         height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                 f'{count}', ha='center', va='bottom', fontsize=10)
+        ax.text(bar.get_x() + bar.get_width() / 2., height + 0.1,
+                f'{count}', ha='center', va='bottom', fontsize=10)
 
     # 添加is_update=0的统计信息到图例
     if update_0_count > 0:
         ax.bar([0], [0], color='orange', alpha=0.7, label=f'is_update=0 ({update_0_count}个)')
-    
+
     # 添加图例
     ax.legend(loc='upper right')
 
@@ -73,6 +77,7 @@ def plot_date_distribution(dates_update_1, counts_update_1, update_0_count, tota
     plt.show()
 
     return fig
+
 
 def print_statistics(date_count_update_1, update_0_count, total_count):
     """
@@ -90,7 +95,7 @@ def print_statistics(date_count_update_1, update_0_count, total_count):
         percentage = (count / total_count) * 100
         print(f"  {date}: {count}个 ({percentage:.1f}%)")
 
-    print(f"is_update=0的数据: {update_0_count}个 ({(update_0_count/total_count)*100:.1f}%)")
+    print(f"is_update=0的数据: {update_0_count}个 ({(update_0_count / total_count) * 100:.1f}%)")
 
     print("=" * 60)
     print(f"总计: {total_count}个用户配置")
@@ -106,11 +111,16 @@ def print_statistics(date_count_update_1, update_0_count, total_count):
         print(f"平均每天(is_update=1): {avg_per_day:.1f}个")
         print(f"最多配置的日期: {max_date} ({max_count}个)")
 
+
 # 主程序
 # 主程序 - 从文件读取版本
 if __name__ == "__main__":
     # 从文件读取JSON数据
-    file_path = r"D:\Settings\TikTok\video\right_urls.json"  # 请替换为实际文件路径
+
+    script_dir = Path(sys.executable).parent.resolve()
+    parent_dir = script_dir.parent
+
+    file_path = parent_dir / "right_urls.json"  # 请替换为实际文件路径
 
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
