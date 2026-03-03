@@ -28,6 +28,7 @@ def main(update_path_to_download: Path):
             json_data = json_list[index]
             index += 1
             logging.info(f"开始下载第{index}个json,剩余{UPDATE_MAX_INDEX - count}个")
+            # download
             count_ = download_by_json(json_data, Download_path)
 
             if count_ > 0:
@@ -61,6 +62,7 @@ def download_by_json(json_data: dict, Download_path):
 
         logging.info(f"#{folder_path} has {urls.__len__()} urls!")
         for index, url in enumerate(urls, 1):
+            # download
             download_single_url(url, old_date, Download_path)
 
         file_count = 0
@@ -90,19 +92,20 @@ def download_single_url(url: str, old_date: str, Download_path: str):
     try:
         logging.info(f"开始下载URL: {url}")
 
-        ps_command = f"f2 -d DEBUG dy -p {Download_path} -i {old_date}'|'2028-01-01 -u {url}"
+        ps_command = f"f2 -d DEBUG dy -p {Download_path} -i {old_date}'|'2028-12-01 -u {url}"
         logging.info(ps_command)
 
         process = subprocess.run(
             ["powershell", "-ExecutionPolicy", "Bypass", "-Command", ps_command],
             capture_output=True,
             text=True,
-            encoding='gbk',
+            encoding='UTF-8',
             errors='ignore'
         )
 
         if process.returncode == 0:
             logging.info(f"url处理成功: {url}")
+            # logging.info(process.stdout)
 
 
     except Exception as e:
@@ -112,7 +115,8 @@ def download_single_url(url: str, old_date: str, Download_path: str):
 
 if __name__ == "__main__":
 
-    script_dir = Path(sys.executable).parent.resolve()
+    # script_dir = Path(sys.executable).parent.resolve()
+    script_dir = Path(r'C:\Users\31749\Dorain_file\TikTok\video\tool')
     parent_dir = script_dir.parent
 
     config_path = parent_dir / "config.yaml"
@@ -130,7 +134,7 @@ if __name__ == "__main__":
         UPDATE_PATH = Path(PATHS.get('update_path'))
         BACKUP_PATH = Path(PATHS.get('backup_path'))
         LOG_PATH = Path(PATHS.get('log_path'))
-        UPDATE_MAX_INDEX = SETTINGS.get('update_max_index', 5)  # 提供默认值
+        UPDATE_MAX_INDEX = SETTINGS.get('update_max_index', 20)  # 提供默认值
 
         # 配置日志
         logging.basicConfig(
@@ -169,7 +173,7 @@ if __name__ == "__main__":
         print(f"文件备份成功: {file_name} -> {new_file_name}")
         print(f"备份位置: {target_file_path}")
 
-
+        main(UPDATE_PATH)
 
 
     except yaml.YAMLError as e:
@@ -178,7 +182,5 @@ if __name__ == "__main__":
         print(f"备份过程中发生错误: {e}")
     except FileNotFoundError:
         raise FileNotFoundError(f"配置文件未找到")
-
-    main(UPDATE_PATH)
 
     input("按回车键退出...")  # 程序会停在这里，等待用户按下回车键
