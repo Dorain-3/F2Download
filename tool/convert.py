@@ -1,7 +1,6 @@
 import ffmpeg
 from pathlib import Path
-import os
-from show_progress import show_progress
+from tool.show_progress import show_progress
 
 
 def rename_video_file(old_file_path,convert_str:str):
