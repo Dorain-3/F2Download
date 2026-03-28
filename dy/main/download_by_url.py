@@ -1,31 +1,11 @@
-import sys
 from datetime import datetime
+from dy.tool.update_time_by_name import find_latest_date_from_files
 import json
 import logging
 import os
 import subprocess
 from pathlib import Path
-
 import yaml
-
-script_dir = Path(sys.executable).parent.resolve()
-parent_dir = script_dir.parent
-
-url_path = parent_dir / "new_url.json"
-
-download_post_path = parent_dir / "Download" / "douyin" / "post"
-
-log_path = script_dir / "logs" / "download.log"
-
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_path),
-        logging.StreamHandler()
-    ]
-)
 
 
 def main(url_path):
@@ -37,6 +17,7 @@ def main(url_path):
             for i, url in enumerate(url_list):
                 logging.info(f"开始下载第{i + 1}个url")
                 download_url(url)
+
 
     except Exception as e:
         print(e)
@@ -62,15 +43,20 @@ def download_url(url):
         if process.returncode == 0:
             logging.info(f"url处理成功: {url}")
 
-        dirs = os.listdir(download_post_path)
-        latest_folder = max(dirs, key=lambda f: os.path.getctime(os.path.join(download_post_path, f)))
-        latest_folder_path = os.path.join(download_post_path, latest_folder)
+        dirs = os.listdir(DOWNLOAD_PATH)
+        latest_folder = max(dirs, key=lambda f: os.path.getctime(os.path.join(DOWNLOAD_PATH, f)))
+        latest_folder_path = os.path.join(DOWNLOAD_PATH, latest_folder)
         json_path = os.path.join(latest_folder_path, "url.json")
+
+        old_date = find_latest_date_from_files(latest_folder_path)
 
         json_data = {
             "url": [url],
-            "old_date": datetime.now().strftime('%Y-%m-%d')
+            "old_date": old_date.strftime('%Y-%m-%d')
         }
+
+        logging.info(f"old_date: {old_date.strftime('%Y-%m-%d')}")
+
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(json_data, f, ensure_ascii=False, indent=4)
 
@@ -86,6 +72,8 @@ if __name__ == "__main__":
 
     config_path = parent_dir / "config.yaml"
     Download_path = parent_dir / "Download"
+
+    url_path = parent_dir / "new_url.json"
 
     try:
 
@@ -112,34 +100,8 @@ if __name__ == "__main__":
             encoding='utf-8'
         )
 
-        # 检查源文件是否存在
-        if not os.path.exists(UPDATE_PATH):
-            print(f"错误：源文件 '{UPDATE_PATH}' 不存在")
-            sys.exit()
-
-        # 检查目标目录是否存在，如果不存在则创建
-        if not os.path.exists(BACKUP_PATH):
-            os.makedirs(BACKUP_PATH)
-            print(f"创建目标目录: {BACKUP_PATH}")
-
-        # 获取文件名和扩展名
-        file_name = os.path.basename(UPDATE_PATH)
-        name_without_ext, file_extension = os.path.splitext(file_name)
-
-        # 获取当前日期并格式化为字符串
-        current_date = datetime.now().strftime("%Y-%m-%d")
-
-        # 构建新文件名（原文件名_当前日期.扩展名）
-        new_file_name = f"{name_without_ext}_{current_date}{file_extension}"
-        target_file_path = os.path.join(BACKUP_PATH, new_file_name)
-
-        # 复制文件到目标位置
-        shutil.copy2(UPDATE_PATH, target_file_path)
-        print(f"文件备份成功: {file_name} -> {new_file_name}")
-        print(f"备份位置: {target_file_path}")
-
-        main(UPDATE_PATH)
-
+        main(url_path)
+        input("下载完成")
 
     except yaml.YAMLError as e:
         raise ValueError(f"解析配置文件时出错: {e}")
@@ -147,6 +109,3 @@ if __name__ == "__main__":
         print(f"备份过程中发生错误: {e}")
     except FileNotFoundError:
         raise FileNotFoundError(f"配置文件未找到")
-
-    main(url_path)
-    input("下载完成")

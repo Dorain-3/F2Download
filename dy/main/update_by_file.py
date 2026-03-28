@@ -6,6 +6,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
+from dy.tool.update_time_by_name import extract_date_from_filename
 
 import yaml
 
@@ -29,10 +30,12 @@ def main(update_path_to_download: Path):
             index += 1
             logging.info(f"开始下载第{index}个json,剩余{UPDATE_MAX_INDEX - count}个")
             # download
-            count_ = download_by_json(json_data, Download_path)
+            count_, latest_date = download_by_json(json_data, Download_path)
 
-            if count_ > 0:
-                json_data["old_date"] = datetime.now().strftime('%Y-%m-%d')
+            logging.info(f"latest_date:{latest_date}\n")
+
+            if count_ > 0 and latest_date is not None :
+                json_data["old_date"] = latest_date.strftime('%Y-%m-%d')
                 count += 1
             else:
                 json_data["is_update"] = "0"
@@ -67,10 +70,19 @@ def download_by_json(json_data: dict, Download_path):
 
         file_count = 0
 
+        latest_date = None
+
         for root, _, files in os.walk(DOWNLOAD_PATH):
             for filename in files:
                 source_path = os.path.join(root, filename)
                 target_path = os.path.join(folder_path, filename)
+
+                date_obj = extract_date_from_filename(filename)
+
+                if date_obj:
+                    # 如果这是第一个找到的日期，或者比当前最晚的日期更晚
+                    if latest_date is None or date_obj > latest_date:
+                        latest_date = date_obj
 
                 try:
                     shutil.copy2(source_path, target_path)  # 使用copy2保留元数据
@@ -78,11 +90,11 @@ def download_by_json(json_data: dict, Download_path):
                 except Exception as e:
                     print(f"复制失败 {filename}: {str(e)}")
 
-        logging.info(f"复制完成! 共复制 {file_count} 个文件到 {folder_path}\n")
+        logging.info(f"复制完成! 共复制 {file_count} 个文件到 {folder_path}")
         shutil.rmtree(DOWNLOAD_PATH)
         os.makedirs(DOWNLOAD_PATH)
 
-        return file_count
+        return file_count, latest_date
 
     except Exception as e:
         print(e)
