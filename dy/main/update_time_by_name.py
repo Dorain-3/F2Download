@@ -30,6 +30,50 @@ def extract_date_from_filename(filename):
     return None
 
 
+def find_latest_mp4_creation_time(folder_path):
+    """
+    查找指定文件夹中所有MP4文件的最晚创建时间
+
+    Args:
+        folder_path (str): 要搜索的文件夹路径
+
+    Returns:
+        datetime
+    """
+
+    latest_time = None
+
+    try:
+        # 遍历文件夹及其所有子文件夹
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                # 检查文件扩展名是否为.mp4（不区分大小写）
+                if file.lower().endswith('.mp4'):
+                    file_path = os.path.join(root, file)
+
+                    try:
+                        # 获取文件的创建时间
+                        creation_time = os.path.getctime(file_path)
+
+                        # 更新最晚创建时间
+                        if latest_time is None or creation_time > latest_time:
+                            latest_time = creation_time
+
+                    except (OSError, PermissionError) as e:
+                        # 处理无法访问的文件
+                        print(f"警告：无法访问文件 '{file_path}': {e}")
+                        continue
+
+    except Exception as e:
+        print(f"遍历文件夹时发生错误: {e}")
+        return None
+
+    if latest_time is not None:
+        return datetime.fromtimestamp(latest_time)
+    else:
+        return None
+
+
 def find_latest_date_from_files(directory='.'):
     """
     从指定目录的文件中提取最晚的日期
@@ -46,8 +90,9 @@ def find_latest_date_from_files(directory='.'):
         files = [f for f in path.iterdir() if f.is_file() and f.suffix != '.json']
 
         if not files:
-            print(f"目录 '{directory}' 中没有文件")
-            return None
+            print(directory)
+            print(f"目录中没有文件\n")
+            return datetime(2021, 1, 1)
 
         latest_date = None
 
@@ -61,8 +106,8 @@ def find_latest_date_from_files(directory='.'):
                     latest_date = date_obj
 
         if latest_date is None:
-            print("未找到符合日期格式的文件")
-            return None
+            latest_date = find_latest_mp4_creation_time(directory)
+            return latest_date
 
         return latest_date
 

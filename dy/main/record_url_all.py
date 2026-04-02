@@ -1,11 +1,10 @@
-import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 from pathlib import Path
+from update_time_by_name import find_latest_date_from_files
 
-script_dir = Path(sys.executable).parent.resolve()
-parent_dir = script_dir.parent
+parent_dir = Path(r"C:\Users\31749\Dorain_file\TikTok\video")
 
 
 def record_urls():
@@ -25,10 +24,18 @@ def record_urls():
             if file.endswith(".json"):
                 url_path = os.path.join(root, file)
                 folder_path = root
+
+                latest_date = find_latest_date_from_files(folder_path)
+
+                if not latest_date:
+                    print(folder_path)
+                    latest_date = datetime.now()
+
                 with open(url_path, "r", encoding="utf-8") as f__:
                     data = json.load(f__)
                     url = data["url"]
-                    old_date = data["old_date"]
+                    old_date = (latest_date + timedelta(days=1)).strftime('%Y-%m-%d')
+                    datetime_now = datetime.now().strftime('%Y-%m-%d')
 
                     if not url:
 
@@ -37,6 +44,7 @@ def record_urls():
                             "local_path": os.path.join(root, file),
                             "folder_path": folder_path,
                             "old_date": old_date,
+                            "update_time": old_date,
                             "is_update": "1"
                         }
 
@@ -48,9 +56,10 @@ def record_urls():
                             "url": url,
                             "local_path": os.path.join(root, file),
                             "folder_path": folder_path,
-                            "old_date": next(
-                                (item.get("old_date", old_date) for item in json_list if item.get("url") == url),
-                                old_date),
+                            "old_date": old_date,
+                            "update_time": next(
+                                (item.get("update_time", datetime_now) for item in json_list if item.get("url") == url),
+                                datetime_now),
                             "is_update": next(
                                 (item.get("is_update", "1") for item in json_list if item.get("url") == url), "1")
                         }
@@ -62,7 +71,8 @@ def record_urls():
         json_string = {
             "json_list_len": json_list2w.__len__(),
             "json_list": sorted(json_list2w,
-                                key=lambda x: (-int(x['is_update']), datetime.strptime(x['old_date'], '%Y-%m-%d'))),
+                                key=lambda x: (-int(x['is_update']), datetime.strptime(x['update_time'], '%Y-%m-%d'),
+                                               datetime.strptime(x['old_date'], '%Y-%m-%d'))),
         }
         json.dump(json_string, json_file, indent=4, ensure_ascii=False)
 
@@ -77,4 +87,5 @@ def record_urls():
 
 if __name__ == "__main__":
     record_urls()
+    input("ok")
     # main()

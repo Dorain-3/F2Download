@@ -70,3 +70,5 @@ if __name__ == "__main__":
 
     # 调用函数执行移动操作
     move_image_files_with_suffix(source_directory, target_directory, config_path)
+
+    input('已完成')

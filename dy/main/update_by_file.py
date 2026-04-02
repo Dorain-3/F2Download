@@ -4,9 +4,9 @@ import shutil
 import subprocess
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from dy.tool.update_time_by_name import extract_date_from_filename
+from dy.main.update_time_by_name import find_latest_date_from_files
 
 import yaml
 
@@ -32,16 +32,18 @@ def main(update_path_to_download: Path):
             # download
             count_, latest_date = download_by_json(json_data, Download_path)
 
-            logging.info(f"latest_date:{latest_date}\n")
+            logging.info(f"latest_date:{(latest_date + timedelta(days=1))}\n")
 
-            if count_ > 0 and latest_date is not None :
-                json_data["old_date"] = latest_date.strftime('%Y-%m-%d')
+            if count_ > 0 and latest_date is not None:
+                json_data["old_date"] = (latest_date + timedelta(days=1)).strftime('%Y-%m-%d')
+                json_data["update_time"] = datetime.now().strftime('%Y-%m-%d')
                 count += 1
             else:
                 json_data["is_update"] = "0"
 
         json_list = sorted(json_list,
-                           key=lambda x: (-int(x['is_update']), datetime.strptime(x['old_date'], '%Y-%m-%d')))
+                           key=lambda x: (-int(x['is_update']), datetime.strptime(x['update_time'], '%Y-%m-%d'),
+                                          datetime.strptime(x['old_date'], '%Y-%m-%d')))
 
         json_data_to_write = {
             "json_list_len": len(json_list),
@@ -70,19 +72,10 @@ def download_by_json(json_data: dict, Download_path):
 
         file_count = 0
 
-        latest_date = None
-
         for root, _, files in os.walk(DOWNLOAD_PATH):
             for filename in files:
                 source_path = os.path.join(root, filename)
                 target_path = os.path.join(folder_path, filename)
-
-                date_obj = extract_date_from_filename(filename)
-
-                if date_obj:
-                    # 如果这是第一个找到的日期，或者比当前最晚的日期更晚
-                    if latest_date is None or date_obj > latest_date:
-                        latest_date = date_obj
 
                 try:
                     shutil.copy2(source_path, target_path)  # 使用copy2保留元数据
@@ -91,6 +84,8 @@ def download_by_json(json_data: dict, Download_path):
                     print(f"复制失败 {filename}: {str(e)}")
 
         logging.info(f"复制完成! 共复制 {file_count} 个文件到 {folder_path}")
+
+        latest_date = find_latest_date_from_files(folder_path)
         shutil.rmtree(DOWNLOAD_PATH)
         os.makedirs(DOWNLOAD_PATH)
 

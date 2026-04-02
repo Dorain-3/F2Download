@@ -1,11 +1,9 @@
 import os
-import sys
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict
 import time
-import shutil
 import send2trash
 
 

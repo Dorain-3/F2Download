@@ -1,5 +1,4 @@
-from datetime import datetime
-from dy.tool.update_time_by_name import find_latest_date_from_files
+from dy.main.update_time_by_name import find_latest_date_from_files
 import json
 import logging
 import os
@@ -17,6 +16,7 @@ def main(url_path):
             for i, url in enumerate(url_list):
                 logging.info(f"开始下载第{i + 1}个url")
                 download_url(url)
+                logging.info(f"第{i+1}个url下载完成\n")
 
 
     except Exception as e:
