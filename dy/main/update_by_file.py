@@ -19,9 +19,6 @@ def main(update_path_to_download: Path):
 
         json_list = jsons_data["json_list"]
 
-        json_list = sorted(json_list,
-                           key=lambda x: (-int(x['is_update']), datetime.strptime(x['old_date'], '%Y-%m-%d')))
-
         index = 0
         count = 0
 
