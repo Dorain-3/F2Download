@@ -44,7 +44,9 @@ def record_urls():
                             "local_path": os.path.join(root, file),
                             "folder_path": folder_path,
                             "old_date": old_date,
-                            "update_time": old_date,
+                            "update_time": next(
+                                (item.get("update_time", old_date) for item in json_list if item.get("url") == url),
+                                old_date),
                             "is_update": "1"
                         }
 
@@ -58,8 +60,8 @@ def record_urls():
                             "folder_path": folder_path,
                             "old_date": old_date,
                             "update_time": next(
-                                (item.get("update_time", datetime_now) for item in json_list if item.get("url") == url),
-                                datetime_now),
+                                (item.get("update_time", old_date) for item in json_list if item.get("url") == url),
+                                old_date),
                             "is_update": next(
                                 (item.get("is_update", "1") for item in json_list if item.get("url") == url), "1")
                         }
