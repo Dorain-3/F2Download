@@ -6,9 +6,8 @@ import logging
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from dy.main.update_time_by_name import find_latest_date_from_files
-
-import yaml
+from dy.main.get_time_by_name import get_latest_date
+from dy.main.read_cfg import get_config
 
 
 def main(update_path_to_download: Path):
@@ -23,11 +22,13 @@ def main(update_path_to_download: Path):
         count = 0
 
         while count < UPDATE_MAX_INDEX:
+            #
             json_data = json_list[index]
             index += 1
+
             logging.info(f"开始下载第{index}个json,剩余{UPDATE_MAX_INDEX - count}个")
             # download
-            count_, latest_date = download_by_json(json_data, Download_path)
+            count_, latest_date = download_by_json(json_data)
 
             logging.info(f"latest_date:{(latest_date + timedelta(days=1))}\n")
 
@@ -46,26 +47,30 @@ def main(update_path_to_download: Path):
             "json_list_len": len(json_list),
             "json_list": json_list,
         }
-        logging.info(f"successfully updated {UPDATE_MAX_INDEX} urls")
+
         with open(UPDATE_PATH, "w+", encoding="utf-8") as f:
             json.dump(json_data_to_write, f, ensure_ascii=False, indent=4)
+
+        logging.info(f"successfully updated {UPDATE_MAX_INDEX} urls")
 
 
     except Exception as e:
         print(e)
 
 
-def download_by_json(json_data: dict, Download_path):
-    # json_data = json.loads(json_data)
+def download_by_json(json_data: dict):
     try:
         urls = json_data['url']
         old_date = json_data['old_date']
         folder_path = json_data['folder_path']
 
         logging.info(f"#{folder_path} has {urls.__len__()} urls!")
+
         for index, url in enumerate(urls, 1):
             # download
-            download_single_url(url, old_date, Download_path)
+            logging.info(f"开始下载第{index + 1}个URL: {url}")
+
+            download_single_url(url, old_date)
 
         file_count = 0
 
@@ -82,7 +87,7 @@ def download_by_json(json_data: dict, Download_path):
 
         logging.info(f"复制完成! 共复制 {file_count} 个文件到 {folder_path}")
 
-        latest_date = find_latest_date_from_files(folder_path)
+        latest_date = get_latest_date(folder_path)
         shutil.rmtree(DOWNLOAD_PATH)
         os.makedirs(DOWNLOAD_PATH)
 
@@ -92,11 +97,11 @@ def download_by_json(json_data: dict, Download_path):
         print(e)
 
 
-def download_single_url(url: str, old_date: str, Download_path: str):
+def download_single_url(url: str, old_date: str):
     try:
-        logging.info(f"开始下载URL: {url}")
 
-        ps_command = f"f2 -d DEBUG dy -p {Download_path} -i {old_date}'|'2028-12-01 -u {url}"
+        ps_command = f"f2 -d DEBUG dy -p {Download_path} -i {old_date}'|'2030-12-01 -u {url}"
+
         logging.info(ps_command)
 
         process = subprocess.run(
@@ -119,72 +124,56 @@ def download_single_url(url: str, old_date: str, Download_path: str):
 
 if __name__ == "__main__":
 
-    # script_dir = Path(sys.executable).parent.resolve()
-    script_dir = Path(r'C:\Users\31749\Dorain_file\TikTok\video\tool')
-    parent_dir = script_dir.parent
+    cfg = get_config()
 
-    config_path = parent_dir / "config.yaml"
-    Download_path = parent_dir / "Download"
+    root_path = cfg.root_path
 
-    try:
+    config_path = root_path / "config.yaml"
+    Download_path = root_path / "Download"
 
-        with open(config_path, 'r', encoding='utf-8') as file:
-            app_config = yaml.safe_load(file)  # 使用 safe_load 避免安全风险[7,8](@ref)
+    DOWNLOAD_PATH = cfg.download_path
+    UPDATE_PATH = cfg.update_path
+    BACKUP_PATH = cfg.backup_path
+    LOG_PATH = cfg.log_path
+    UPDATE_MAX_INDEX = cfg.update_max_index
 
-        PATHS = app_config.get('paths', {})
-        SETTINGS = app_config.get('settings', {})
+    # 配置日志
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(LOG_PATH),
+            logging.StreamHandler()
+        ],
+        encoding='utf-8'
+    )
 
-        DOWNLOAD_PATH = Path(PATHS.get('download_path'))
-        UPDATE_PATH = Path(PATHS.get('update_path'))
-        BACKUP_PATH = Path(PATHS.get('backup_path'))
-        LOG_PATH = Path(PATHS.get('log_path'))
-        UPDATE_MAX_INDEX = SETTINGS.get('update_max_index', 20)  # 提供默认值
+    # 检查源文件是否存在
+    if not os.path.exists(UPDATE_PATH):
+        print(f"错误：源文件 '{UPDATE_PATH}' 不存在")
+        sys.exit()
 
-        # 配置日志
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_PATH),
-                logging.StreamHandler()
-            ],
-            encoding='utf-8'
-        )
+    # 检查目标目录是否存在，如果不存在则创建
+    if not os.path.exists(BACKUP_PATH):
+        os.makedirs(BACKUP_PATH)
+        print(f"创建目标目录: {BACKUP_PATH}")
 
-        # 检查源文件是否存在
-        if not os.path.exists(UPDATE_PATH):
-            print(f"错误：源文件 '{UPDATE_PATH}' 不存在")
-            sys.exit()
+    # 获取文件名和扩展名
+    file_name = os.path.basename(UPDATE_PATH)
+    name_without_ext, file_extension = os.path.splitext(file_name)
 
-        # 检查目标目录是否存在，如果不存在则创建
-        if not os.path.exists(BACKUP_PATH):
-            os.makedirs(BACKUP_PATH)
-            print(f"创建目标目录: {BACKUP_PATH}")
+    # 获取当前日期并格式化为字符串
+    current_date = datetime.now().strftime("%Y-%m-%d")
 
-        # 获取文件名和扩展名
-        file_name = os.path.basename(UPDATE_PATH)
-        name_without_ext, file_extension = os.path.splitext(file_name)
+    # 构建新文件名（原文件名_当前日期.扩展名）
+    new_file_name = f"{name_without_ext}_{current_date}{file_extension}"
+    target_file_path = os.path.join(BACKUP_PATH, new_file_name)
 
-        # 获取当前日期并格式化为字符串
-        current_date = datetime.now().strftime("%Y-%m-%d")
+    # 复制文件到目标位置
+    shutil.copy2(UPDATE_PATH, target_file_path)
+    print(f"文件备份成功: {file_name} -> {new_file_name}")
+    print(f"备份位置: {target_file_path}")
 
-        # 构建新文件名（原文件名_当前日期.扩展名）
-        new_file_name = f"{name_without_ext}_{current_date}{file_extension}"
-        target_file_path = os.path.join(BACKUP_PATH, new_file_name)
-
-        # 复制文件到目标位置
-        shutil.copy2(UPDATE_PATH, target_file_path)
-        print(f"文件备份成功: {file_name} -> {new_file_name}")
-        print(f"备份位置: {target_file_path}")
-
-        main(UPDATE_PATH)
-
-
-    except yaml.YAMLError as e:
-        raise ValueError(f"解析配置文件时出错: {e}")
-    except Exception as e:
-        print(f"备份过程中发生错误: {e}")
-    except FileNotFoundError:
-        raise FileNotFoundError(f"配置文件未找到")
+    main(UPDATE_PATH)
 
     input("按回车键退出...")  # 程序会停在这里，等待用户按下回车键

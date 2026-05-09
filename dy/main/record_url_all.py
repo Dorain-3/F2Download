@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import json
 import os
 from pathlib import Path
-from update_time_by_name import find_latest_date_from_files
+from get_time_by_name import get_latest_date
 
 parent_dir = Path(r"C:\Users\31749\Dorain_file\TikTok\video")
 
@@ -25,7 +25,7 @@ def record_urls():
                 url_path = os.path.join(root, file)
                 folder_path = root
 
-                latest_date = find_latest_date_from_files(folder_path)
+                latest_date = get_latest_date(folder_path)
 
                 if not latest_date:
                     print(folder_path)

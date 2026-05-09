@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-def extract_date_from_filename(filename):
+def get_date_from_filename(filename) -> datetime | None:
     """
     从文件名中提取日期时间信息
 
@@ -30,7 +30,7 @@ def extract_date_from_filename(filename):
     return None
 
 
-def find_latest_mp4_creation_time(folder_path):
+def get_latest_mp4_creation_time(folder_path: Path) -> datetime | None:
     """
     查找指定文件夹中所有MP4文件的最晚创建时间
 
@@ -74,7 +74,7 @@ def find_latest_mp4_creation_time(folder_path):
         return None
 
 
-def find_latest_date_from_files(directory='.'):
+def get_latest_date(directory) -> datetime | None:
     """
     从指定目录的文件中提取最晚的日期
 
@@ -98,7 +98,7 @@ def find_latest_date_from_files(directory='.'):
 
         for file in files:
             filename = file.name
-            date_obj = extract_date_from_filename(filename)
+            date_obj = get_date_from_filename(filename)
 
             if date_obj:
                 # 如果这是第一个找到的日期，或者比当前最晚的日期更晚
@@ -106,7 +106,7 @@ def find_latest_date_from_files(directory='.'):
                     latest_date = date_obj
 
         if latest_date is None:
-            latest_date = find_latest_mp4_creation_time(directory)
+            latest_date = get_latest_mp4_creation_time(directory)
             return latest_date
 
         return latest_date
@@ -127,6 +127,6 @@ if __name__ == "__main__":
     path = Path(r"C:\Users\31749\Dorain_file\TikTok\video\post\_")
 
     # 示例1: 使用完整功能
-    result = find_latest_date_from_files(path)
+    result = get_latest_date(path)
     if result:
         print(f"最晚日期: {result.strftime('%Y-%m-%d')}")

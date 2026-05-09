@@ -1,22 +1,27 @@
-from dy.main.update_time_by_name import find_latest_date_from_files
+from dy.main.get_time_by_name import get_latest_date
+from dy.main.read_cfg import get_config
 import json
 import logging
 import os
 import subprocess
-from pathlib import Path
-import yaml
 
 
 def main(url_path):
     try:
         with open(url_path, 'r', encoding='utf-8') as f:
+            #
             data = json.load(f)
             url_list = data['url']
-            logging.info(f"开始下载#{url_list.__len__()}个url")
+
+            logging.info(f"开始下载#{url_list.__len__()}个url\n")
+
             for i, url in enumerate(url_list):
+                #
                 logging.info(f"开始下载第{i + 1}个url")
+
                 download_url(url)
-                logging.info(f"第{i+1}个url下载完成\n")
+
+                logging.info(f"第{i + 1}个url下载完成\n")
 
 
     except Exception as e:
@@ -27,9 +32,8 @@ def download_url(url):
     try:
         logging.info(f"开始处理URL: {url}")
 
-        download_path = parent_dir / "Download"
+        ps_command = f"f2 -d DEBUG dy -p {download} -u {url}"
 
-        ps_command = f"f2 -d DEBUG dy -p {download_path} -u {url}"
         logging.info(ps_command)
 
         process = subprocess.run(
@@ -46,9 +50,10 @@ def download_url(url):
         dirs = os.listdir(DOWNLOAD_PATH)
         latest_folder = max(dirs, key=lambda f: os.path.getctime(os.path.join(DOWNLOAD_PATH, f)))
         latest_folder_path = os.path.join(DOWNLOAD_PATH, latest_folder)
+
         json_path = os.path.join(latest_folder_path, "url.json")
 
-        old_date = find_latest_date_from_files(latest_folder_path)
+        old_date = get_latest_date(latest_folder_path)
 
         json_data = {
             "url": [url],
@@ -65,47 +70,31 @@ def download_url(url):
 
 
 if __name__ == "__main__":
+    #
+    cfg = get_config()
 
-    # script_dir = Path(sys.executable).parent.resolve()
-    script_dir = Path(r'C:\Users\31749\Dorain_file\TikTok\video\tool')
-    parent_dir = script_dir.parent
+    root_path = cfg.root_path
 
-    config_path = parent_dir / "config.yaml"
-    Download_path = parent_dir / "Download"
+    download = root_path / "Download"
 
-    url_path = parent_dir / "new_url.json"
+    url_path = root_path / "new_url.json"
 
-    try:
+    DOWNLOAD_PATH = cfg.download_path
 
-        with open(config_path, 'r', encoding='utf-8') as file:
-            app_config = yaml.safe_load(file)  # 使用 safe_load 避免安全风险[7,8](@ref)
+    LOG_PATH = cfg.log_path
 
-        PATHS = app_config.get('paths', {})
-        SETTINGS = app_config.get('settings', {})
+    UPDATE_MAX_INDEX = cfg.update_max_index  # 提供默认值
 
-        DOWNLOAD_PATH = Path(PATHS.get('download_path'))
-        UPDATE_PATH = Path(PATHS.get('update_path'))
-        BACKUP_PATH = Path(PATHS.get('backup_path'))
-        LOG_PATH = Path(PATHS.get('log_path'))
-        UPDATE_MAX_INDEX = SETTINGS.get('update_max_index', 20)  # 提供默认值
+    # 配置日志
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(LOG_PATH),
+            logging.StreamHandler()
+        ],
+        encoding='utf-8'
+    )
 
-        # 配置日志
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(LOG_PATH),
-                logging.StreamHandler()
-            ],
-            encoding='utf-8'
-        )
-
-        main(url_path)
-        input("下载完成")
-
-    except yaml.YAMLError as e:
-        raise ValueError(f"解析配置文件时出错: {e}")
-    except Exception as e:
-        print(f"备份过程中发生错误: {e}")
-    except FileNotFoundError:
-        raise FileNotFoundError(f"配置文件未找到")
+    main(url_path)
+    input("下载完成")

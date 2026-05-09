@@ -1,9 +1,9 @@
 import json
-import sys
+import matplotlib
 
+matplotlib.use('QtAgg')
 import matplotlib.pyplot as plt
 from datetime import datetime
-from pathlib import Path
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
@@ -117,10 +117,10 @@ def print_statistics(date_count_update_1, update_0_count, total_count):
 if __name__ == "__main__":
     # 从文件读取JSON数据
 
-    script_dir = Path(sys.executable).parent.resolve()
-    parent_dir = script_dir.parent
+    # script_dir = Path(sys.executable).parent.resolve()
+    # parent_dir = script_dir.parent
 
-    file_path = parent_dir / "right_urls.json"  # 请替换为实际文件路径
+    file_path = r"C:\Users\31749\Dorain_file\TikTok\video\right_urls.json"
 
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -142,3 +142,4 @@ if __name__ == "__main__":
         print("错误: JSON文件格式不正确")
     except Exception as e:
         print(f"发生错误: {e}")
+

@@ -1,12 +1,5 @@
 import json
-import sys
-from pathlib import Path
-
-script_dir = Path(sys.executable).parent.resolve()
-parent_dir = script_dir.parent
-
-new_url_file = parent_dir / "new_url.json"
-right_url_file = parent_dir / "right_urls.json"
+from read_cfg import get_config
 
 
 def url_in_list(url, list):
@@ -20,7 +13,17 @@ def url_in_list(url, list):
 
 
 if __name__ == "__main__":
+
+    cfg = get_config()
+
+    root_dir = cfg.root_path
+
+    new_url_file = root_dir / "new_url.json"
+
+    right_url_file = root_dir / "right_urls.json"
+
     while True:
+        #
         o_url = input("url:")
 
         url = o_url.split('?')[0]
@@ -28,6 +31,7 @@ if __name__ == "__main__":
         try:
             with open(new_url_file, "r", encoding="utf-8") as f:
                 data1 = json.load(f)
+
             urls = data1["url"]
 
             with open(right_url_file, "r", encoding="utf-8") as f:
