@@ -73,10 +73,20 @@ def _categorize_file_size(size_in_bytes):
     """
     if size_in_bytes < 1024:  # 小于1KB
         return "0-1KB"
+    elif size_in_bytes < 10 * 1024:  # 小于10KB
+        return "1KB-10KB"
+    elif size_in_bytes < 100 * 1024:  # 小于100KB
+        return "10KB-100KB"
     elif size_in_bytes < 1024 * 1024:  # 小于1MB
-        return "1KB-1MB"
+        return "100KB-1MB"
+    elif size_in_bytes < 3 * 1024 * 1024:  # 小于3MB
+        return "1MB-3MB"
+    elif size_in_bytes < 5 * 1024 * 1024:  # 小于5MB
+        return "3MB-5MB"
+    elif size_in_bytes < 10 * 1024 * 1024:  # 小于10MB
+        return "5MB-10MB"
     elif size_in_bytes < 100 * 1024 * 1024:  # 小于100MB
-        return "1MB-100MB"
+        return "10MB-100MB"
     elif size_in_bytes < 1024 * 1024 * 1024:  # 小于1GB
         return "100MB-1GB"
     else:  # 大于等于1GB
@@ -143,9 +153,50 @@ def display_stats(type_stats, human_readable=True, sort_by='size', top_n=None):
               f"{format_size(avg_size, human_readable):<15} {percentage:.1f}%")
 
 
+def _draw_progress_bar(percentage, width=20, filled_char='█', empty_char='░'):
+    """
+    绘制简单的进度条
+    """
+    filled = int(width * percentage / 100)
+    empty = width - filled
+    return f"{filled_char * filled}{empty_char * empty}"
+
+
+def display_largest_files_by_type(type_stats, top_n=10, human_readable=True):
+    """
+    显示每种文件类型最大的前N个文件
+    """
+    if not type_stats:
+        print("无文件类型数据")
+        return
+
+    print("\n" + "=" * 80)
+    print(f"各文件类型最大的前{top_n}个文件:")
+    print("=" * 80)
+
+    # 按类型名称排序
+    sorted_types = sorted(type_stats.items(), key=lambda x: x[0])
+
+    for file_type, stats in sorted_types:
+        files = stats['files']
+        if not files:
+            continue
+
+        # 按文件大小降序排序，取前N个
+        sorted_files = sorted(files, key=lambda x: x['size'], reverse=True)[:top_n]
+
+        print(f"\n[{file_type}] - 共 {len(files)} 个文件")
+        if len(sorted_files) > 0:
+            print("-" * 60)
+            print(f"{'序号':<6} {'文件名':<40} {'大小':<15}")
+            print("-" * 60)
+            for i, file_info in enumerate(sorted_files, 1):
+                print(f"{i:<6} {file_info['name'][:40]:<40} {format_size(file_info['size'], human_readable):<15}")
+
+
 def display_size_distribution(size_dist_stats, human_readable=True):
     """
-    显示文件大小分布统计结果
+    显示文件大小分布统计结果（带可视化进度条）
     """
     if not size_dist_stats:
         print("无文件大小分布数据")
@@ -156,7 +207,7 @@ def display_size_distribution(size_dist_stats, human_readable=True):
     total_size = sum(stats['total_size'] for stats in size_dist_stats.values())
 
     # 按区间名称排序（确保顺序符合直观认知）
-    range_order = ["0-1KB", "1KB-1MB", "1MB-100MB", "100MB-1GB", ">=1GB"]
+    range_order = ["0-1KB", "1KB-10KB", "10KB-100KB", "100KB-1MB", "1MB-3MB", "3MB-5MB", "5MB-10MB", "10MB-100MB", "100MB-1GB", ">=1GB"]
     sorted_items = []
     for r in range_order:
         if r in size_dist_stats:
@@ -169,8 +220,8 @@ def display_size_distribution(size_dist_stats, human_readable=True):
     print("\n" + "=" * 80)
     print("文件大小分布统计:")
     print("=" * 80)
-    print(f"{'大小区间':<15} {'文件数量':<12} {'数量占比':<10} {'区间总大小':<15} {'大小占比':<10}")
-    print("-" * 70)
+    print(f"{'大小区间':<12} {'文件数量':>8} {'占比':>8} {'进度条':<22} {'区间大小':<12} {'大小占比':>8}")
+    print("-" * 80)
 
     for size_range, stats in sorted_items:
         count = stats['count']
@@ -178,8 +229,9 @@ def display_size_distribution(size_dist_stats, human_readable=True):
         count_percentage = (count / total_count * 100) if total_count > 0 else 0
         size_percentage = (range_total_size / total_size * 100) if total_size > 0 else 0
 
-        print(f"{size_range:<15} {count:<12,} {count_percentage:>8.1f}%  "
-              f"{format_size(range_total_size, human_readable):<15} {size_percentage:>8.1f}%")
+        progress_bar = _draw_progress_bar(count_percentage)
+        print(f"{size_range:<12} {count:>8,} {count_percentage:>6.1f}%  "
+              f"[{progress_bar}]  {format_size(range_total_size, human_readable):<12} {size_percentage:>6.1f}%")
 
 
 def export_to_csv(type_stats, filename, human_readable=True):
@@ -246,7 +298,7 @@ def main():
     type_stats, size_dist_stats = get_file_type_stats(
         directory_path=directory,
         human_readable=True,
-        sort_by='type'
+        sort_by='size'
     )
 
     if type_stats is None:
@@ -262,6 +314,13 @@ def main():
     # 显示文件大小分布统计结果
     display_size_distribution(
         size_dist_stats=size_dist_stats,
+        human_readable=True
+    )
+
+    # 显示每种文件类型最大的前10个文件
+    display_largest_files_by_type(
+        type_stats=type_stats,
+        top_n=10,
         human_readable=True
     )
 

@@ -252,8 +252,8 @@ def main():
         return
 
     quality_strategy = {
-        'level_breaks': [500 * 1024, 2000 * 1024, 6000 * 1024, 10000 * 1024],  # 500KB, 2MB, 5MB , 10MB
-        'level_quality': [None, 90, 80, 70, 60]  # None表示不压缩
+        'level_breaks': [5000 * 1024, 10000 * 1024, 20000 * 1024, 40000 * 1024],  # 500KB, 2MB, 5MB , 10MB
+        'level_quality': [None, 60, 50, 40, 30]  # None表示不压缩
     }
 
     print(f"输入目录: {args.input_dir}")

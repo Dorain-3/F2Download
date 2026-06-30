@@ -1,3 +1,24 @@
+"""
+MP4文件检查工具 - 快速检测并自动删除无效的MP4文件
+
+功能说明:
+    本脚本用于快速检查MP4文件的有效性，自动识别并删除以下类型的无效文件：
+    - HTML错误页面（以'<html'开头）
+    - 文本内容文件（非MP4格式）
+    - 损坏的MP4文件
+    - 空文件
+    - 读取错误或权限问题的文件
+    
+    使用多线程加速检查过程，支持将无效文件移至回收站或永久删除。
+
+主要组件:
+    - CheckResult: 检查结果数据类
+    - FastMP4Checker: 快速MP4文件检测器类
+    
+使用方式:
+    直接运行本脚本，默认检查指定目录下的所有MP4文件
+"""
+
 import os
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -9,12 +30,12 @@ import send2trash
 
 @dataclass
 class CheckResult:
-    """检查结果数据类"""
-    file_path: str
-    is_valid: bool
-    reason: str
-    file_size: int
-    check_time: float
+    """检查结果数据类 - 存储单个文件的检查结果"""
+    file_path: str        # 文件路径
+    is_valid: bool        # 是否为有效MP4文件
+    reason: str          # 检查结果原因
+    file_size: int       # 文件大小（字节）
+    check_time: float    # 检查耗时（秒）
     deleted: bool = False  # 是否已删除
 
 
@@ -24,10 +45,10 @@ class FastMP4Checker:
     def __init__(self, chunk_size: int = 20, max_workers: int = 20):
         """
         初始化检测器
-
+        
         Args:
-            chunk_size: 读取的文件头大小（字节）
-            max_workers: 最大线程数
+            chunk_size: 读取的文件头大小（字节），默认20字节
+            max_workers: 最大线程数，默认20
         """
         self.chunk_size = chunk_size
         self.max_workers = max_workers
@@ -36,6 +57,7 @@ class FastMP4Checker:
         self.delete_to_recycle = True  # True=移到回收站, False=永久删除
         self.delete_types = ['html', 'other', 'error']  # 删除所有无效类型
 
+        # 统计信息字典
         self.stats = {
             'total': 0,
             'valid': 0,
@@ -49,16 +71,22 @@ class FastMP4Checker:
     def quick_check_single(self, file_path: str) -> CheckResult:
         """
         快速检查单个文件
-
+        
+        通过读取文件头判断文件类型：
+        - 空文件：文件大小为0
+        - HTML内容：以'<'开头且包含<html/head/body标签
+        - 正常MP4：包含'ftyp'标识
+        
         Args:
             file_path: 文件路径
-
+            
         Returns:
-            CheckResult: 检查结果
+            CheckResult: 检查结果对象
         """
         start_time = time.time()
 
         try:
+            # 获取文件大小
             file_size = os.path.getsize(file_path)
 
             # 空文件直接判定为无效
@@ -154,10 +182,10 @@ class FastMP4Checker:
     def delete_file(self, result: CheckResult) -> bool:
         """
         删除文件
-
+        
         Args:
             result: 检查结果对象
-
+            
         Returns:
             bool: 是否删除成功
         """
@@ -205,10 +233,10 @@ class FastMP4Checker:
     def should_delete(self, result: CheckResult) -> bool:
         """
         判断是否应该删除该文件
-
+        
         Args:
             result: 检查结果
-
+            
         Returns:
             bool: 是否应该删除
         """
@@ -227,11 +255,11 @@ class FastMP4Checker:
     def find_mp4_files(self, path: str, recursive: bool = True) -> List[str]:
         """
         查找所有MP4文件
-
+        
         Args:
             path: 路径（文件或目录）
             recursive: 是否递归查找子目录
-
+            
         Returns:
             List[str]: MP4文件路径列表
         """
@@ -252,11 +280,11 @@ class FastMP4Checker:
     def batch_check(self, paths: List[str], recursive: bool = True) -> Dict[str, List[CheckResult]]:
         """
         批量检查多个路径
-
+        
         Args:
             paths: 路径列表（可以是文件或目录）
             recursive: 是否递归查找子目录
-
+            
         Returns:
             Dict: 按状态分类的结果
         """
@@ -268,6 +296,7 @@ class FastMP4Checker:
         all_files = list(set(all_files))
         self.stats['total'] = len(all_files)
 
+        # 打印开始信息
         print(f"找到 {len(all_files)} 个MP4文件，开始检查...")
         print(f"⚠️ 自动删除模式已开启：将删除所有无效文件（移至回收站）")
         print(f"   - HTML错误文件 (🌐)")
@@ -275,6 +304,7 @@ class FastMP4Checker:
         print(f"   - 读取错误文件 (❌)")
         print("-" * 70)
 
+        # 初始化结果字典
         results = {
             'valid': [],
             'invalid_html': [],
@@ -326,7 +356,15 @@ class FastMP4Checker:
         return results
 
     def _format_size(self, size: int) -> str:
-        """格式化文件大小"""
+        """
+        格式化文件大小
+        
+        Args:
+            size: 文件大小（字节）
+            
+        Returns:
+            str: 格式化后的大小字符串
+        """
         if size < 1024:
             return f"{size}B"
         elif size < 1024 * 1024:
@@ -335,15 +373,20 @@ class FastMP4Checker:
             return f"{size / (1024 * 1024):.1f}MB"
 
     def print_summary(self, results: Dict[str, List[CheckResult]], elapsed_time: float):
-        """打印统计摘要"""
+        """
+        打印统计摘要
+        
+        Args:
+            results: 检查结果字典
+            elapsed_time: 总耗时（秒）
+        """
         print("\n" + "=" * 70)
         print("检查完成！统计结果：")
         print("=" * 70)
         print(f"总文件数:     {self.stats['total']}")
         print(f"正常MP4:      {self.stats['valid']} (✅) - 已保留")
         print(f"HTML错误:     {self.stats['invalid_html']} (🌐) - {'已删除' if self.stats['invalid_html'] > 0 else '-'}")
-        print(
-            f"其他异常:     {self.stats['invalid_other']} (⚠️) - {'已删除' if self.stats['invalid_other'] > 0 else '-'}")
+        print(f"其他异常:     {self.stats['invalid_other']} (⚠️) - {'已删除' if self.stats['invalid_other'] > 0 else '-'}")
         print(f"读取错误:     {self.stats['errors']} (❌) - {'已删除' if self.stats['errors'] > 0 else '-'}")
 
         print(f"\n删除统计:")
@@ -371,7 +414,13 @@ class FastMP4Checker:
                         print(f"     原因: {r.reason}")
 
     def export_results(self, results: Dict[str, List[CheckResult]], output_file: str = "check_results.txt"):
-        """导出结果到文件"""
+        """
+        导出结果到文件
+        
+        Args:
+            results: 检查结果字典
+            output_file: 输出文件路径
+        """
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write("MP4文件检查结果报告\n")
             f.write("=" * 70 + "\n\n")
@@ -418,6 +467,7 @@ def main():
         r'C:\Users\31749\Dorain_file\TikTok\video'
     ]
 
+    # 打印标题信息
     print("=" * 70)
     print("🚀 MP4文件自动检测删除工具")
     print("=" * 70)
@@ -425,11 +475,10 @@ def main():
     print("运行模式: 自动删除所有无效MP4文件（移至回收站）")
     print("=" * 70 + "\n")
 
-    print()
-
     # 创建检测器
     checker = FastMP4Checker()
 
+    # 记录开始时间
     start_time = time.time()
 
     # 执行检查
@@ -438,12 +487,13 @@ def main():
         recursive=True  # 递归查找子目录
     )
 
+    # 计算耗时
     elapsed_time = time.time() - start_time
 
-    # 打印统计
+    # 打印统计摘要
     checker.print_summary(results, elapsed_time)
 
-    # 导出结果
+    # 导出结果到文件
     checker.export_results(results)
 
 
