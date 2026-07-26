@@ -193,10 +193,9 @@ if __name__ == "__main__":
     cfg = get_config()
 
     # 获取路径配置
-    root_path = cfg.root_path
-    Download_path = root_path / "Download"       # 下载临时目录
+    Download_path = cfg.download_dir              # 下载临时目录
     DOWNLOAD_PATH = cfg.download_path            # 下载文件存放路径
-    UPDATE_PATH = cfg.update_path                # 更新数据文件路径
+    UPDATE_PATH = cfg.right_urls_path             # 更新数据文件路径
     BACKUP_PATH = cfg.backup_path                # 备份文件路径
     LOG_PATH = cfg.log_path                      # 日志文件路径
     UPDATE_MAX_INDEX = cfg.update_max_index      # 最大更新数量

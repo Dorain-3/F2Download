@@ -49,10 +49,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # - set_target_bitrate: 交互式设置目标码率
 # - get_video_bitrate: 获取视频文件码率
 # - parse_bitrate: 解析码率字符串为数值
-from video_compressor import (
-    CODECS, TARGET_BITRATE,
-    compress_video, select_codec, set_target_bitrate,
-    get_video_bitrate, parse_bitrate
+from video.video_compressor import (
+    TARGET_BITRATE,
+    compress_video, select_codec, get_video_bitrate, parse_bitrate
 )
 
 # 默认码率过滤阈值，码率大于此值的视频才会被压缩
@@ -322,6 +321,8 @@ def batch_compress(folder_path, codec_key, target_bitrate, bitrate_threshold, au
 
     # 步骤4: 显示符合条件的文件数量和排序后的前20个结果
     total_count = len(filtered_files)
+
+
     print(f"\n📋 共找到 {total_count} 个符合条件的视频文件")
     print("=" * 80)
 

@@ -21,8 +21,7 @@ URL添加工具 - 用于向抖音视频项目添加新的URL链接
 """
 
 import json
-from read_cfg import get_config
-
+from dy.main.read_cfg import get_config
 
 def url_in_list(url, json_list):
     """
@@ -48,19 +47,16 @@ def url_in_list(url, json_list):
 if __name__ == "__main__":
     # 加载配置
     cfg = get_config()
-    
-    # 获取项目根目录路径
-    root_dir = cfg.root_path
-    
-    # 构建文件路径
-    new_url_file = root_dir / "new_url.json"      # 待处理URL文件
-    right_url_file = root_dir / "right_urls.json"  # 已配置URL文件
+
+    # 从统一配置获取文件路径
+    new_url_file = cfg.new_url_path          # 待处理URL文件
+    right_url_file = cfg.right_urls_path     # 已配置URL文件
 
     # 进入循环，持续接收用户输入
     while True:
         # 提示用户输入URL
         o_url = input("url:")
-        
+
         # 去除URL中的查询参数（保留?之前的部分）
         url = o_url.split('?')[0]
 
@@ -81,17 +77,18 @@ if __name__ == "__main__":
             else:
                 # 将新URL添加到列表
                 urls.append(url)
-                
+
                 # 构建要写入的数据结构
                 data2w = {
                     "url": urls,
                 }
-                
+
                 # 写回new_url.json文件
                 with open(new_url_file, "w", encoding="utf-8") as f:
                     json.dump(data2w, f, ensure_ascii=False, indent=4)
-                
+
                 print(f"url has added: {url}")
+                print(f"current url total: {len(urls)}")
 
         except FileNotFoundError as e:
             print(f"File not found: {e}")

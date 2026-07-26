@@ -18,34 +18,22 @@
 
 import os
 import shutil
-import sys
-from pathlib import Path
-
-import yaml
+from dy.main.read_cfg import get_config
 
 
-def move_image_files_with_suffix(source_dir, target_dir, config_path):
+def move_image_files_with_suffix(source_dir, target_dir, image_extensions):
     """
     移动指定扩展名的图片文件
     
     Args:
         source_dir: 源目录路径
         target_dir: 目标目录路径
-        config_path: 配置文件路径（包含image_extensions配置）
+        image_extensions: 需要移动的图片扩展名列表
     """
-    # 初始化图片扩展名变量
-    image_extensions = None
-
-    try:
-        # 读取配置文件
-        with open(config_path, 'r', encoding='utf-8') as file:
-            config = yaml.safe_load(file)
-
-        # 提取图片扩展名列表并转换为元组
-        image_extensions = tuple(config['image_extensions'])
-
-    except Exception as e:
-        print(e)
+    # 转换为endswith支持的元组
+    image_extensions = tuple(image_extensions)
+    if not image_extensions:
+        raise ValueError("配置项 image_extensions 不能为空")
 
     # 确保目标目录存在，如果不存在则创建
     os.makedirs(target_dir, exist_ok=True)
@@ -88,18 +76,14 @@ def move_image_files_with_suffix(source_dir, target_dir, config_path):
 
 
 if __name__ == "__main__":
-    # 获取Python可执行文件所在目录的父目录作为源目录
-    script_dir = Path(sys.executable).parent.resolve()
-    source_directory = script_dir.parent
-
-    # 构建目标目录路径（源目录的父目录下的pic文件夹）
-    target_directory = source_directory.parent / "pic"
-
-    # 构建配置文件路径
-    config_path = source_directory / "config.yaml"
+    cfg = get_config()
 
     # 调用函数执行移动操作
-    move_image_files_with_suffix(source_directory, target_directory, config_path)
+    move_image_files_with_suffix(
+        cfg.image_source_path,
+        cfg.image_target_path,
+        cfg.image_extensions,
+    )
 
     # 等待用户输入后退出
     input('已完成')

@@ -1,3 +1,9 @@
+"""按创建日期范围筛选并移动 MP4 文件。
+
+移动时会在源目录同级创建以日期范围命名的输出目录，并保留文件相对于
+源目录的原始层级结构。目标文件已存在时会跳过，避免静默覆盖。
+"""
+
 import os
 import shutil
 from datetime import datetime
@@ -177,6 +183,7 @@ def build_output_dir_name(start_date, end_date):
 
 
 def main():
+    """交互式收集源目录和日期范围，确认后执行文件移动。"""
     print("=" * 60)
     print("MP4 文件按日期范围移动工具")
     print("=" * 60)

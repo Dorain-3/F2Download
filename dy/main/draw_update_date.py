@@ -23,6 +23,7 @@ matplotlib.use('QtAgg')
 
 import matplotlib.pyplot as plt
 from datetime import datetime
+from dy.main.read_cfg import get_config
 
 # 设置中文字体（支持中文显示）
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
@@ -172,8 +173,8 @@ def print_statistics(date_count_update_1, update_0_count, total_count):
 
 
 if __name__ == "__main__":
-    # right_urls.json文件路径
-    file_path = r"C:\Users\31749\Dorain_file\TikTok\video\right_urls.json"
+    # 从统一配置获取right_urls.json文件路径
+    file_path = get_config().right_urls_path
 
     try:
         # 读取JSON数据

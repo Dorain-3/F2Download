@@ -112,12 +112,10 @@ if __name__ == "__main__":
     cfg = get_config()
 
     # 获取路径配置
-    root_path = cfg.root_path
-    download = root_path / "Download"       # 下载临时目录
-    url_path = root_path / "new_url.json"   # URL列表文件
+    download = cfg.download_dir              # 下载临时目录
+    url_path = cfg.new_url_path              # URL列表文件
     DOWNLOAD_PATH = cfg.download_path       # 下载文件存放路径
     LOG_PATH = cfg.log_path                 # 日志文件路径
-    UPDATE_MAX_INDEX = cfg.update_max_index # 最大更新数量
 
     # 配置日志（同时输出到文件和控制台）
     logging.basicConfig(

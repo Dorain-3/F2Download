@@ -1,3 +1,8 @@
+"""统计目录中的文件类型、容量分布及大文件明细。
+
+统计结果既可在控制台展示，也可导出为 CSV，便于分析目录空间占用。
+"""
+
 import os
 from collections import defaultdict
 
@@ -291,6 +296,7 @@ def export_size_distribution_to_csv(size_dist_stats, filename, human_readable=Tr
 
 
 def main():
+    """使用预设目录执行一次完整统计并输出各类报表。"""
     # 测试路径
     directory = r"C:\Users\31749\Dorain_file\cos"  # 用于测试的目录，请根据实际情况修改
 

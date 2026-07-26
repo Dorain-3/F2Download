@@ -1,3 +1,5 @@
+"""按创建月份统计目录树中的 MP4 文件数量。"""
+
 import os
 from collections import defaultdict
 from datetime import datetime
@@ -86,6 +88,7 @@ def display_monthly_count(monthly_count, total_files):
 
 
 def main():
+    """读取目标目录，完成扫描、按月聚合并打印统计结果。"""
     target_dir = input("请输入要统计的目标文件夹路径: ").strip().strip('"')
 
     if not target_dir:

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="nccdb_erp_20250901@192.168.202.140" uuid="043de62d-f37b-4f73-a879-ec25a3cd033b">
-      <driver-ref>sqlserver.ms</driver-ref>
+    <data-source source="LOCAL" name="foo.db" uuid="ee1e8aa6-f724-4d05-a853-ce62eebd29d5">
+      <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
-      <jdbc-driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</jdbc-driver>
-      <jdbc-url>jdbc:sqlserver://192.168.202.140\MSSQLSERVER:1433;database=nccdb_erp_20250901</jdbc-url>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:D:/Settings/X/.data/foo.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>

@@ -99,7 +99,7 @@ def extract_videos(base_path):
     """
     moved_count = 0
     
-    output_dir = os.path.join(base_path, 'output')
+    output_dir = os.path.join(base_path, '../output')
     
     try:
         os.makedirs(output_dir, exist_ok=True)
@@ -187,4 +187,4 @@ if __name__ == "__main__":
     print("[DONE] 扫描完成！")
     print(f"   自动移动视频文件: {moved} 个")
     if moved > 0:
-        print(f"   输出目录: {os.path.join(user_input, 'output')}")
+        print(f"   输出目录: {os.path.join(user_input, '../output')}")

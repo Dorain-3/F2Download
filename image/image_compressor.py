@@ -1,3 +1,9 @@
+"""按文件大小选择压缩质量，并行压缩目录中的图片。
+
+脚本会将图片统一编码为 JPEG 并覆盖原文件；写入时先使用临时文件，
+成功后再替换源文件，以降低处理中断导致源文件损坏的风险。
+"""
+
 import os
 import argparse
 from pathlib import Path

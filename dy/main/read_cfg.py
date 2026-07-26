@@ -3,7 +3,8 @@
 
 功能说明:
     本模块使用单例模式实现配置文件的加载和管理，确保配置只加载一次。
-    支持从YAML配置文件中读取路径和设置参数，供项目中其他模块调用。
+    支持通过环境变量指定YAML配置文件，并从中读取路径和设置参数，
+    供项目中其他模块统一调用。
 
 主要组件:
     - Config类: 配置管理类，封装配置加载、验证和获取逻辑
@@ -13,14 +14,22 @@
 配置项说明:
     paths.root_path:        项目根目录路径
     paths.download_path:    下载文件存放路径
-    paths.update_path:      更新数据文件路径
+    paths.update_path:      right_urls.json路径（兼容旧配置项）
     paths.backup_path:      备份文件路径
     paths.log_path:         日志文件路径
     paths.download:         下载临时目录路径
+    paths.new_url_path:     new_url.json路径（可选）
+    paths.right_urls_path:  right_urls.json路径（可选，优先于update_path）
+    paths.error_urls_path:  error_urls.json路径（可选）
+    paths.post_path:        视频归档目录（可选）
+    paths.image_source_path: 图片整理源目录（可选）
+    paths.image_target_path: 图片整理目标目录（可选）
     settings.update_max_index: 最大更新数量
     image_extensions:       图片扩展名列表
 
 使用方式:
+    先设置环境变量 DY_CONFIG_PATH，值为YAML配置文件路径，然后：
+
     from dy.main.read_cfg import get_config
     
     cfg = get_config()
@@ -31,8 +40,10 @@
 import os
 from pathlib import Path
 from typing import Optional
-
 import yaml
+
+
+CONFIG_PATH_ENV = "DY_CONFIG_PATH"
 
 
 class Config:
@@ -72,6 +83,12 @@ class Config:
         self.update_max_index: int = 20
         self.config_path: Optional[Path] = None
         self.download_dir: Optional[Path] = None
+        self.new_url_path: Optional[Path] = None
+        self.right_urls_path: Optional[Path] = None
+        self.error_urls_path: Optional[Path] = None
+        self.post_path: Optional[Path] = None
+        self.image_source_path: Optional[Path] = None
+        self.image_target_path: Optional[Path] = None
         self.image_extensions: list = []
 
     @classmethod
@@ -91,7 +108,7 @@ class Config:
         加载配置文件
         
         Args:
-            config_path: 配置文件路径，为None时使用默认路径
+            config_path: 配置文件路径。为None时从DY_CONFIG_PATH环境变量读取
             
         Returns:
             Config: 加载完成的配置实例
@@ -104,9 +121,19 @@ class Config:
         if self._loaded and config_path is None:
             return self
 
-        # 使用默认配置文件路径（项目根目录下的config.yaml）
+        # 未显式传入路径时，统一从环境变量读取配置文件位置
         if config_path is None:
-            config_path = Path(__file__).parent.parent / "config.yaml"
+            config_path_value = os.environ.get(CONFIG_PATH_ENV)
+            if not config_path_value:
+                raise EnvironmentError(
+                    f"未设置环境变量 {CONFIG_PATH_ENV}，请将其设置为YAML配置文件路径"
+                )
+            config_path = Path(os.path.expandvars(config_path_value)).expanduser()
+        else:
+            config_path = Path(config_path).expanduser()
+
+        if not config_path.is_absolute():
+            config_path = config_path.resolve()
 
         # 记录配置文件路径
         self.config_path = config_path
@@ -114,22 +141,51 @@ class Config:
         try:
             # 读取并解析YAML配置文件
             with open(config_path, 'r', encoding='utf-8') as file:
-                app_config = yaml.safe_load(file)
+                app_config = yaml.safe_load(file) or {}
+
+            if not isinstance(app_config, dict):
+                raise ValueError(f"配置文件根节点必须是对象: {config_path}")
 
             # 提取paths和settings配置项
-            PATHS = app_config.get('paths', {})
-            SETTINGS = app_config.get('settings', {})
+            paths = app_config.get('paths', {})
+            settings = app_config.get('settings', {})
+
+            if not isinstance(paths, dict):
+                raise ValueError("配置项 paths 必须是对象")
+            if not isinstance(settings, dict):
+                raise ValueError("配置项 settings 必须是对象")
 
             # 赋值路径配置
-            self.root_path = Path(PATHS.get('root_path'))
-            self.download_path = Path(PATHS.get('download_path'))
-            self.update_path = Path(PATHS.get('update_path'))
-            self.backup_path = Path(PATHS.get('backup_path'))
-            self.log_path = Path(PATHS.get('log_path'))
-            self.download_dir = Path(PATHS.get('download'))
+            self.root_path = self._read_path(paths, 'root_path')
+            self.download_path = self._read_path(paths, 'download_path')
+            self.download_dir = self._read_path(paths, 'download')
+            self.backup_path = self._read_path(paths, 'backup_path')
+            self.log_path = self._read_path(paths, 'log_path')
+
+            # update_path是旧字段；right_urls_path存在时优先使用新字段
+            right_urls_value = paths.get('right_urls_path', paths.get('update_path'))
+            self.right_urls_path = self._make_path(right_urls_value, 'right_urls_path')
+            self.update_path = self.right_urls_path
+
+            # 以下路径可在YAML中单独覆盖，否则由基础路径统一推导
+            self.new_url_path = self._read_path(
+                paths, 'new_url_path', self.root_path / 'new_url.json'
+            )
+            self.error_urls_path = self._read_path(
+                paths, 'error_urls_path', self.root_path / 'error_urls.json'
+            )
+            self.post_path = self._read_path(
+                paths, 'post_path', self.root_path / 'post'
+            )
+            self.image_source_path = self._read_path(
+                paths, 'image_source_path', self.download_dir
+            )
+            self.image_target_path = self._read_path(
+                paths, 'image_target_path', self.root_path / 'pic'
+            )
             
             # 赋值设置配置
-            self.update_max_index = SETTINGS.get('update_max_index', 20)
+            self.update_max_index = settings.get('update_max_index', 20)
             self.image_extensions = app_config.get('image_extensions', [])
 
             # 标记已加载
@@ -141,6 +197,20 @@ class Config:
             raise FileNotFoundError(f"配置文件未找到: {config_path}")
 
         return self
+
+    def _read_path(self, paths: dict, key: str, default=None) -> Path:
+        """读取一个路径配置；可选配置缺失时使用给定默认值。"""
+        return self._make_path(paths.get(key, default), key)
+
+    def _make_path(self, value, key: str) -> Path:
+        """展开路径中的环境变量，并让相对路径相对于YAML所在目录。"""
+        if value is None or str(value).strip() == '':
+            raise ValueError(f"缺少路径配置: paths.{key}")
+
+        path = Path(os.path.expandvars(str(value))).expanduser()
+        if not path.is_absolute():
+            path = self.config_path.parent / path
+        return path
 
     def validate(self) -> bool:
         """
@@ -175,7 +245,7 @@ def load_config(config_path: Optional[Path] = None) -> Config:
     加载配置文件（便捷函数）
     
     Args:
-        config_path: 配置文件路径，为None时使用默认路径
+        config_path: 配置文件路径，为None时从DY_CONFIG_PATH环境变量读取
         
     Returns:
         Config: 加载完成的配置实例

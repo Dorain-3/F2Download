@@ -1,3 +1,9 @@
+"""批量压缩图片的增强版命令行工具。
+
+工具会根据原文件大小选择 JPEG/WEBP 质量，必要时缩小超大图片分辨率，
+再通过线程池并行处理。压缩结果会直接覆盖输入文件，运行前应先备份。
+"""
+
 import os
 import argparse
 from pathlib import Path
@@ -189,6 +195,7 @@ def process_images_parallel(input_dir, output_format='JPEG', max_workers=None, s
 
 
 def main():
+    """解析命令行参数，确认覆盖风险后启动批量压缩。"""
     parser = argparse.ArgumentParser(description='批量并行图片压缩工具（增强版）')
     parser.add_argument('input_dir', help='输入图片目录（将直接压缩并覆盖原文件）')
     parser.add_argument('-f', '--format', choices=['JPEG', 'WEBP'],

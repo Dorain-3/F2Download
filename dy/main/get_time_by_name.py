@@ -148,8 +148,10 @@ def get_latest_date(directory) -> datetime | None:
 
 
 if __name__ == "__main__":
-    # 测试路径
-    path = Path(r"C:\Users\31749\Dorain_file\TikTok\video\post\_")
+    from dy.main.read_cfg import get_config
+
+    # 从统一配置获取测试目录
+    path = get_config().post_path
 
     # 示例: 使用完整功能
     result = get_latest_date(path)

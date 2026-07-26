@@ -130,6 +130,7 @@ def convert_folder(folder: Path, overwrite: bool = False) -> tuple[int, int, int
 
 
 def parse_args() -> argparse.Namespace:
+    """解析待扫描目录及是否覆盖已有音频文件的命令行选项。"""
     parser = argparse.ArgumentParser(
         description="递归提取 MP4 的原始音频流；不重新编码，码率和音质保持不变。"
     )
@@ -148,6 +149,7 @@ def normalize_folder(raw_path: str) -> Path:
 
 
 def main() -> int:
+    """检查运行依赖，执行音频提取并返回适合作为进程状态码的结果。"""
     args = parse_args()
 
     if ffmpeg is None:
