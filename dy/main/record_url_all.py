@@ -49,18 +49,18 @@ def record_urls():
     cfg = get_config()
 
     # 从统一配置获取文件路径
-    root_path = cfg.post_path                   # 视频目录
-    json_path = cfg.right_urls_path             # 有效URL配置文件
-    error_json_path = cfg.error_urls_path       # 无效URL配置文件
+    root_path = cfg.post_path  # 视频目录
+    json_path = cfg.right_urls_path  # 有效URL配置文件
+    error_json_path = cfg.error_urls_path  # 无效URL配置文件
 
     if not root_path.is_dir():
         raise FileNotFoundError(f"视频目录不存在: {root_path}")
 
     # 初始化结果列表
-    json_list2w = []      # 有效URL列表
+    json_list2w = []  # 有效URL列表
     error_json_list = []  # 无效URL列表
     processed_count = 0
-    
+
     # 读取现有的right_urls.json文件（用于保留历史更新时间）
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -79,8 +79,9 @@ def record_urls():
 
                 # 如果没有找到日期，使用当前日期
                 if not latest_date:
-                    print(folder_path)
-                    latest_date = datetime.now()
+                    print("this folder is empty " + folder_path)
+                    latest_date = next(
+                        (item.get("old_date") for item in json_list if item.get("url") == url))
 
                 # 读取url.json文件内容
                 with open(url_path, "r", encoding="utf-8") as f__:
@@ -91,7 +92,15 @@ def record_urls():
                     url = data["url"]
                     processed_count += 1
                     # 计算下次更新的起始日期（最新日期+1天）
-                    old_date = (latest_date + timedelta(days=1)).strftime('%Y-%m-%d')
+                    old_date = latest_date.strftime('%Y-%m-%d')
+
+                    update_time = next(
+                        (item.get("update_time", old_date) for item in json_list if item.get("url") == url),
+                        old_date)
+
+                    if datetime.strptime(update_time, '%Y-%m-%d').date() < datetime.strptime(old_date,
+                                                                                             '%Y-%m-%d').date():
+                        update_time = old_date
 
                     # 如果URL列表为空，归类到错误列表
                     if not url:
@@ -100,9 +109,7 @@ def record_urls():
                             "local_path": os.path.join(root, file),
                             "folder_path": folder_path,
                             "old_date": old_date,
-                            "update_time": next(
-                                (item.get("update_time", old_date) for item in json_list if item.get("url") == url),
-                                old_date),
+                            "update_time": update_time,
                             "is_update": "1"
                         }
                         error_json_list.append(json_data)
@@ -113,9 +120,7 @@ def record_urls():
                             "local_path": os.path.join(root, file),
                             "folder_path": folder_path,
                             "old_date": old_date,
-                            "update_time": next(
-                                (item.get("update_time", old_date) for item in json_list if item.get("url") == url),
-                                old_date),
+                            "update_time": update_time,
                             "is_update": next(
                                 (item.get("is_update", "1") for item in json_list if item.get("url") == url), "1")
                         }

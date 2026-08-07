@@ -35,6 +35,13 @@ def move_image_files_with_suffix(source_dir, target_dir, image_extensions):
     if not image_extensions:
         raise ValueError("配置项 image_extensions 不能为空")
 
+    if not os.path.isdir(source_dir):
+        raise FileNotFoundError(f"图片源目录不存在: {source_dir}")
+
+    print(f"图片源目录: {source_dir}")
+    print(f"图片目标目录: {target_dir}")
+    print(f"图片扩展名: {', '.join(image_extensions)}")
+
     # 确保目标目录存在，如果不存在则创建
     os.makedirs(target_dir, exist_ok=True)
 

@@ -178,7 +178,7 @@ class Config:
                 paths, 'post_path', self.root_path / 'post'
             )
             self.image_source_path = self._read_path(
-                paths, 'image_source_path', self.download_dir
+                paths, 'image_source_path', self.post_path
             )
             self.image_target_path = self._read_path(
                 paths, 'image_target_path', self.root_path / 'pic'

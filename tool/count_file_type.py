@@ -298,7 +298,7 @@ def export_size_distribution_to_csv(size_dist_stats, filename, human_readable=Tr
 def main():
     """使用预设目录执行一次完整统计并输出各类报表。"""
     # 测试路径
-    directory = r"C:\Users\31749\Dorain_file\cos"  # 用于测试的目录，请根据实际情况修改
+    directory = input()  # 用于测试的目录，请根据实际情况修改
 
     # 获取统计信息
     type_stats, size_dist_stats = get_file_type_stats(
